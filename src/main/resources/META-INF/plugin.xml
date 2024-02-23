@@ -8,11 +8,10 @@
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 
-    <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.chummerua.usecasefiletemplatesplugin.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
-    </extensions>
-
-    <applicationListeners>
-        <listener class="com.github.chummerua.usecasefiletemplatesplugin.listeners.MyApplicationActivationListener" topic="com.intellij.openapi.application.ApplicationActivationListener"/>
-    </applicationListeners>
+    <actions>
+        <action id="com.chummerua.useCaseFileTemplatesPlugin.createUseCase.NewUseCaseAction"
+                class="com.chummerua.useCaseFileTemplatesPlugin.createUseCase.NewUseCaseAction" text="UseCase">
+            <add-to-group group-id="NewGroup" anchor="first"/>
+        </action>
+    </actions>
 </idea-plugin>
