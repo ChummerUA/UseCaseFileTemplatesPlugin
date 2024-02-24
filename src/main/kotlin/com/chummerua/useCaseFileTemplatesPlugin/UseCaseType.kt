@@ -1,13 +1,13 @@
 package com.chummerua.useCaseFileTemplatesPlugin
 
-import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModules.DB
-import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModules.DOMAIN
-import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModules.NETWORK
-import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModules.PREFERENCES
+import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModule.DB
+import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModule.DOMAIN
+import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModule.NETWORK
+import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModule.PREFERENCES
 
 enum class UseCaseType(
     val title: String,
-    val supportedModule: String? = null
+    val supportedModule: UseCaseModule
 ) {
     EXECUTABLE("Executable", DOMAIN),
     HTTP("Http", NETWORK),
@@ -20,9 +20,9 @@ enum class UseCaseType(
     PREFERENCES_REMOVE("Remove", PREFERENCES)
 }
 
-object UseCaseModules {
-    const val DOMAIN = "domain"
-    const val DB = "db"
-    const val NETWORK = "network"
-    const val PREFERENCES = "preferences"
+enum class UseCaseModule(val title: String) {
+    DOMAIN("domain"),
+    DB("db"),
+    NETWORK("network"),
+    PREFERENCES("preference")
 }

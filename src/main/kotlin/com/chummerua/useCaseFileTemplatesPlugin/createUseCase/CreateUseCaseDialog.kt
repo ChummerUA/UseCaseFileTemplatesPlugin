@@ -1,5 +1,6 @@
 package com.chummerua.useCaseFileTemplatesPlugin.createUseCase
 
+import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModule
 import com.chummerua.useCaseFileTemplatesPlugin.UseCaseType
 import com.chummerua.useCaseFileTemplatesPlugin.ui.KotlinClassChooser
 import com.intellij.openapi.project.Project
@@ -17,15 +18,14 @@ import javax.swing.JComponent
 
 class CreateUseCaseDialog(
     private val project: Project,
-    private val directory: PsiDirectory
+    private val directory: PsiDirectory,
+    private val useCaseModule: UseCaseModule
 ) : DialogWrapper(project) {
 
     private val config = UseCaseConfig()
 
-    val selectedModule: Module
-        get() = TODO("Implement selected module getter")
-    val supportedUseCaseTypes
-        get() = UseCaseType.entries.filter { it.supportedModule == selectedModule.name }
+    private val supportedUseCaseTypes
+        get() = UseCaseType.entries.toList().filter { it.supportedModule == useCaseModule }
 
     init {
         title = "UseCase"
@@ -36,8 +36,11 @@ class CreateUseCaseDialog(
         row("Name") {
             textField()
                 .bindText(config::name)
+                .horizontalAlign(HorizontalAlign.FILL)
                 .focused()
         }
+
+        separator()
 
         row("Input") {
             cell(KotlinClassChooser(project, "", true, true, false)).horizontalAlign(HorizontalAlign.FILL)
@@ -47,10 +50,10 @@ class CreateUseCaseDialog(
             cell(KotlinClassChooser(project, "", true, true, false)).horizontalAlign(HorizontalAlign.FILL)
         }
 
-        separator()
-
+        val useCaseTypeSelectionVisible = supportedUseCaseTypes.size > 1
+        separator().visible(useCaseTypeSelectionVisible)
         buttonsGroup("Type") {
-            UseCaseType.entries.forEach { useCaseType ->
+            supportedUseCaseTypes.forEach { useCaseType ->
                 row {
                     radioButton((useCaseType.title))
                         .bindSelected(
@@ -59,7 +62,7 @@ class CreateUseCaseDialog(
                         )
                 }
             }
-        }
+        }.visible(useCaseTypeSelectionVisible)
 
         separator()
 
