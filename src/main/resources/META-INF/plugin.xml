@@ -3,9 +3,11 @@
     <id>com.github.chummerua.usecasefiletemplatesplugin</id>
     <name>UseCaseFileTemplatesPlugin Template</name>
     <vendor>chummerua</vendor>
+    <description>This provides file wizard for creating UseCases</description>
 
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.kotlin</depends>
+    <depends>com.intellij.java</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
 

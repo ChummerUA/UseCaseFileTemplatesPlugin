@@ -28,7 +28,8 @@ class NewUseCaseAction: AnAction() {
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        e.project?.let { CreateUseCaseDialog(it, e.selectedDirectory, e.selectedDirectory.selectedDirectoryModule!!).show() }
+        val selectedDirectory = e.selectedDirectory
+        e.project?.let { CreateUseCaseDialog(it, selectedDirectory, selectedDirectory.selectedDirectoryModule!!).show() }
     }
 
     override fun getActionUpdateThread(): ActionUpdateThread = ActionUpdateThread.BGT

@@ -24,5 +24,5 @@ enum class UseCaseModule(val title: String) {
     DOMAIN("domain"),
     DB("db"),
     NETWORK("network"),
-    PREFERENCES("preference")
+    PREFERENCES("preferences")
 }
