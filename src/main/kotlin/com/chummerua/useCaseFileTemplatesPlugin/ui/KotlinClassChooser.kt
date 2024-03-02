@@ -1,17 +1,13 @@
 package com.chummerua.useCaseFileTemplatesPlugin.ui
 
-import com.intellij.openapi.Disposable
 import com.intellij.openapi.module.Module
-import com.intellij.openapi.observable.util.whenItemSelectedFromUi
+import com.intellij.openapi.observable.util.whenFocusLost
+import com.intellij.openapi.observable.util.whenKeyReleased
+import com.intellij.openapi.observable.util.whenPropertyChanged
 import com.intellij.psi.PsiElement
-import com.intellij.ui.EditorTextField
-import com.intellij.ui.LanguageTextField
-import com.intellij.ui.dsl.builder.Cell
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.util.textCompletion.TextFieldWithCompletion
-import org.jetbrains.annotations.ApiStatus
-import javax.swing.JComboBox
-import javax.swing.text.JTextComponent
+import org.jetbrains.kotlin.idea.base.psi.kotlinFqName
 
 class KotlinClassChooser(
     module: Module,
@@ -19,25 +15,36 @@ class KotlinClassChooser(
     oneLineMode: Boolean,
     forceAutoPopup: Boolean,
     showHint: Boolean,
-    onElementSelected: ((PsiElement) -> Unit)
+    onElementSelected: ((PsiElement) -> Unit),
+    private val onTextChanged: (String) -> Unit
 ) : TextFieldWithCompletion(
     module.project,
-    KotlinClassAutoCompletionProvider(module, onElementSelected),
+    KotlinClassAutoCompletionProvider(module) {
+        onElementSelected(it)
+        onTextChanged(it.kotlinFqName.toString())
+    },
     value,
     oneLineMode,
     forceAutoPopup,
     showHint
-)
-
-@ApiStatus.Experimental
-fun <T: EditorTextField> Cell<T>.whenTextChangedFromUi(parentDisposable: Disposable? = null, listener: (String) -> Unit): Cell<T> {
-    return applyToComponent { whenTextChangedFromUi(parentDisposable, listener) }
+) {
+    init {
+        whenKeyReleased {
+            println("key released: $it")
+            onTextChanged(text)
+        }
+        whenFocusLost {
+            println("focus lost")
+            onTextChanged(text)
+        }
+    }
 }
 
 fun Row.kotlinClassChooser(
     module: Module,
     text: String,
-    onElementSelected: (PsiElement) -> Unit
+    onElementSelected: (PsiElement) -> Unit,
+    onTextChanged: (String) -> Unit
 ) = cell(
     KotlinClassChooser(
         module,
@@ -45,6 +52,7 @@ fun Row.kotlinClassChooser(
         oneLineMode = true,
         forceAutoPopup = true,
         showHint = false,
-        onElementSelected = onElementSelected
+        onElementSelected = onElementSelected,
+        onTextChanged = onTextChanged
     )
 )

@@ -2,17 +2,17 @@ package com.chummerua.useCaseFileTemplatesPlugin.createUseCase
 
 import com.chummerua.useCaseFileTemplatesPlugin.UseCaseModule
 import com.chummerua.useCaseFileTemplatesPlugin.UseCaseType
-import com.chummerua.useCaseFileTemplatesPlugin.ui.KotlinClassChooser
 import com.chummerua.useCaseFileTemplatesPlugin.ui.kotlinClassChooser
-import com.chummerua.useCaseFileTemplatesPlugin.ui.whenTextChangedFromUi
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.modules
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.psi.PsiDirectory
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.dsl.builder.*
 import com.intellij.ui.layout.selected
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import javax.swing.Action
 import javax.swing.JComponent
@@ -23,10 +23,15 @@ class CreateUseCaseDialog(
     private val directory: PsiDirectory,
     private val useCaseModule: UseCaseModule
 ) : DialogWrapper(project) {
-    private val createUseCaseAction = okAction as CreateUseCaseAction
+    private val supportedUseCaseTypes = UseCaseType.entries.toList().filter { it.supportedModule == useCaseModule }
+    private val dispatchers = listOf(
+        Dispatchers.Main,
+        Dispatchers.Default,
+        Dispatchers.IO,
+        Dispatchers.Unconfined
+    )
 
-    private val supportedUseCaseTypes
-        get() = UseCaseType.entries.toList().filter { it.supportedModule == useCaseModule }
+    private val config = UseCaseConfig(supportedUseCaseTypes.first())
 
     private val module: Module
         get() = project.modules.first { it.name.contains(useCaseModule.title) }
@@ -39,68 +44,77 @@ class CreateUseCaseDialog(
     }
 
     init {
-        title = "UseCase"
+        title = "New UseCase"
         init()
     }
 
     override fun createCenterPanel(): JComponent = panel {
+        lateinit var overrideCheckBox: JBCheckBox
+        lateinit var dispatcherComboBox: ComboBox<CoroutineDispatcher>
+
         row("Name") {
             textField()
                 .align(Align.FILL)
                 .focused()
                 .whenTextChangedFromUi {
-                    println("setting usecase name: ${it}, ${createUseCaseAction.useCaseName}")
-                    createUseCaseAction.useCaseName = it
+                    config.useCaseName = it
                 }
         }
         separator()
 
         row("Input") {
-            kotlinClassChooser(module, "") { createUseCaseAction.inputPsi = it }
-                .align(Align.FILL)
-                .whenTextChangedFromUi { createUseCaseAction.input = it }
+            kotlinClassChooser(
+                module = module,
+                text = "",
+                onElementSelected = { config.inputPsi = it },
+                onTextChanged = { config.input = it }
+            ).align(Align.FILL)
         }
         row("Output") {
-            kotlinClassChooser(module, "") { createUseCaseAction.outputPsi = it }
-                .align(Align.FILL)
-                .whenTextChangedFromUi { createUseCaseAction.output = it }
+            kotlinClassChooser(
+                module = module,
+                text = "",
+                onElementSelected = { config.outputPsi = it },
+                onTextChanged = { config.output = it }
+            ).align(Align.FILL)
         }
         separator()
 
         row("Type") {
             comboBox(supportedUseCaseTypes, useCaseRenderer).whenItemSelectedFromUi {
-                createUseCaseAction.useCaseType = it
+                config.useCaseType = it
+                updateDefaultDispatcherIfNeeded(dispatcherComboBox)
             }.align(Align.FILL)
         }
         separator()
 
-        lateinit var overrideCB: JBCheckBox
         row {
-            overrideCB = checkBox("Override dispatcher")
-                .bindSelected(createUseCaseAction::overrideDispatcher)
+            checkBox("Override dispatcher")
+                .bindSelected(config::overrideDispatcher)
                 .whenStateChangedFromUi {
-                    createUseCaseAction.overrideDispatcher = it
+                    config.overrideDispatcher = it
+                    updateDefaultDispatcherIfNeeded(dispatcherComboBox)
                 }
-                .component
+                .also { overrideCheckBox = it.component }
         }
         row("Dispatcher") {
-            comboBox(
-                listOf(
-                    Dispatchers.Main,
-                    Dispatchers.Default,
-                    Dispatchers.IO,
-                    Dispatchers.Unconfined
-                ),
-                dispatcherRenderer
-            )
+            comboBox(dispatchers, dispatcherRenderer)
                 .align(Align.FILL)
                 .whenItemSelectedFromUi {
-                    createUseCaseAction.dispatcher = it
+                    config.dispatcher = it
                 }
-        }.enabledIf(overrideCB.selected)
+                .also { dispatcherComboBox = it.component }
+        }.enabledIf(overrideCheckBox.selected)
+
+        updateDefaultDispatcherIfNeeded(dispatcherComboBox)
+    }
+
+    private fun updateDefaultDispatcherIfNeeded(comboBox: ComboBox<CoroutineDispatcher>) = with(config) {
+        if (!overrideDispatcher)
+            comboBox.selectedItem = useCaseType.defaultCoroutineDispatcher
     }
 
     override fun getOKAction(): Action {
-        return CreateUseCaseAction(directory, project, "Ok")
+        return CreateUseCaseAction(directory, project, "Ok", config)
     }
 }
