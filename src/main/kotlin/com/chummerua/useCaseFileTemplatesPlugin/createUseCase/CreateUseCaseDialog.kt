@@ -21,9 +21,10 @@ import kotlin.coroutines.CoroutineContext
 class CreateUseCaseDialog(
     private val project: Project,
     private val directory: PsiDirectory,
-    private val useCaseModule: UseCaseModule
+    private val useCaseModule: UseCaseModule,
+    useCaseType: UseCaseType
 ) : DialogWrapper(project) {
-    private val supportedUseCaseTypes = UseCaseType.entries.toList().filter { it.supportedModule == useCaseModule }
+
     private val dispatchers = listOf(
         Dispatchers.Main,
         Dispatchers.Default,
@@ -31,14 +32,11 @@ class CreateUseCaseDialog(
         Dispatchers.Unconfined
     )
 
-    private val config = UseCaseConfig(supportedUseCaseTypes.first())
+    private val config = UseCaseConfig(useCaseType)
 
     private val module: Module
         get() = project.modules.first { it.name.contains(useCaseModule.title) }
 
-    private val useCaseRenderer = listCellRenderer<UseCaseType> {
-        text = it.title
-    }
     private val dispatcherRenderer = listCellRenderer<CoroutineContext> {
         text = it.toString()
     }
@@ -62,29 +60,15 @@ class CreateUseCaseDialog(
         }
         separator()
 
-        row("Input") {
-            kotlinClassChooser(
-                module = module,
-                text = "",
-                onElementSelected = { config.inputPsi = it },
-                onTextChanged = { config.input = it }
-            ).align(Align.FILL)
-        }
-        row("Output") {
-            kotlinClassChooser(
-                module = module,
-                text = "",
-                onElementSelected = { config.outputPsi = it },
-                onTextChanged = { config.output = it }
-            ).align(Align.FILL)
-        }
-        separator()
-
-        row("Type") {
-            comboBox(supportedUseCaseTypes, useCaseRenderer).whenItemSelectedFromUi {
-                config.useCaseType = it
-                updateDefaultDispatcherIfNeeded(dispatcherComboBox)
-            }.align(Align.FILL)
+        config.useCaseType.parameters.map { parameter ->
+            row(parameter.name) {
+                kotlinClassChooser(
+                    module,
+                    "",
+                    onElementSelected = { parameter.element = it },
+                    onTextChanged = { parameter.value = it }
+                ).align(Align.FILL)
+            }
         }
         separator()
 
